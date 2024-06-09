@@ -144,13 +144,27 @@ internal class Function
                             SetRight(previous, term);
                             break;
                         case TermType.Operator: // + +
-
+                            term.Type = TermType.Sign;
+                            SetRight(previous, term);
                             break;
                         // TODO: Implement Parenthesis
                     }
                     break;
                 case TermType.Parenthesis:
                     // TODO: Implement Parenthesis
+                    break;
+                case TermType.Sign:
+                    switch (term.Type)
+                    {
+                        case TermType.Number: // - 1
+                        case TermType.Literal: // - x
+                            SetRight(previous, term);
+                            break;
+                        case TermType.Operator: // - +
+                            term.Type = TermType.Sign;
+                            SetRight(previous, term);
+                            break;
+                    };
                     break;
             }
 
