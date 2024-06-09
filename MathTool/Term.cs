@@ -10,12 +10,7 @@ internal enum TermType
     Sign
 }
 
-interface ITerm
-{
-    TermType Type { get; set; }
-}
-
-internal record Term : ITerm
+internal record Term
 {
     public TermType Type { get; set; }
 
