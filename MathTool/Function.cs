@@ -1,4 +1,6 @@
-﻿namespace MathTool;
+﻿using System.Reflection.Metadata.Ecma335;
+
+namespace MathTool;
 
 internal class Function
 {
@@ -35,6 +37,8 @@ internal class Function
         input = input.Replace(" ", "");
 
         List<Term> terms = [];
+        Stack<Term> stack = [];
+
         Term? previous = null;
         for (var i = 0; i < input.Length; i++)
         {
@@ -48,8 +52,34 @@ internal class Function
                 _ => throw new ArgumentException($"Invalid character: {c} at Position: {i}"),
             };
 
+            if (term.Type == TermType.Parenthesis)
+            {
+                if (c == '(')
+                {
+                    if (previous != null && previous.Type != TermType.Operator && previous.Type != TermType.Parenthesis)
+                        PerformMultiplication(previous, term);
+
+                    stack.Push(term);
+                }
+                else if (c == ')')
+                {
+                    List<Term> subTerms = [];
+                    while (stack.Peek().Value != "(")
+                        subTerms.Insert(0, stack.Pop());
+                    stack.Pop();
+
+                    var subExpression = BuildExpression(subTerms);
+                    stack.Push(subExpression);
+                }
+
+                continue;
+            }
+
             // Term will never be null here
-            terms.Add(term);
+            if (stack.Count > 0)
+                stack.Push(term);
+            else
+                terms.Add(term);
 
             if (previous == null)
             {
@@ -57,17 +87,18 @@ internal class Function
                 continue;
             }
 
-            void PerformMultiplication(Term term, Term previous)
+            void PerformMultiplication(Term first, Term second)
             {
                 var multiplyTerm = new Term(TermType.Operator, '*');
-                var index = terms.IndexOf(term) - 1;
-                terms.Insert(index, multiplyTerm);
+                var index = terms.IndexOf(first);
+                if (index == -1) index = terms.Count - 1;
+                terms.Insert(index + 1, multiplyTerm);
 
-                if (previous.Parent != null)
-                    previous.Parent.Right = multiplyTerm;
+                if (second.Parent != null)
+                    second.Parent.Right = multiplyTerm;
 
-                SetLeft(multiplyTerm, previous);
-                SetRight(multiplyTerm, term);
+                SetLeft(multiplyTerm, second);
+                SetRight(multiplyTerm, first);
             }
 
             switch (previous.Type)
@@ -77,7 +108,8 @@ internal class Function
                     {
                         case TermType.Number: // 1 2
                             previous.Value += c;
-                            terms.Remove(term);
+                            if (stack.Count == 0)
+                                terms.Remove(term);
                             continue;
                         case TermType.Literal: // 1 x
                             PerformMultiplication(term, previous);
@@ -97,7 +129,7 @@ internal class Function
                             PerformMultiplication(previous, term);
                             break;
                         case TermType.Operator: // x -
-                            term.Left = previous;
+                            term.Left = previous.Parent?.Type == TermType.Sign ? previous.Parent : previous;
                             break;
                             // TODO: Implement Parenthesis
                     }
@@ -109,8 +141,7 @@ internal class Function
                         case TermType.Literal: // + x
                             if (previous.Left == null)
                                 previous.Type = TermType.Sign;
-                            else
-                                SetRight(previous, term);
+                            SetRight(previous, term);
                             break;
                         case TermType.Operator: // + +
 
@@ -133,23 +164,30 @@ internal class Function
             previous = term;
         }
 
+        if (stack.Count > 0)
+            terms.AddRange(stack);
+
+        _root = BuildExpression(terms);
+    }
+
+    private Term BuildExpression(List<Term> terms)
+    {
         foreach (var term in terms)
             if (term.Type == TermType.Operator && term.Left != null && term.Right != null)
-            {
-                _root = term;
-                break;
-            }
+                return term;
 
-        void SetRight(Term parent, Term term)
-        {
-            parent.Right = term;
-            term.Parent = parent;
-        }
+        throw new InvalidOperationException("Invalid expression");
+    }
 
-        void SetLeft(Term parent, Term term)
-        {
-            parent.Left = term;
-            term.Parent = parent;
-        }
+    private static void SetRight(Term parent, Term term)
+    {
+        parent.Right = term;
+        term.Parent = parent;
+    }
+
+    private static void SetLeft(Term parent, Term term)
+    {
+        parent.Left = term;
+        term.Parent = parent;
     }
 }

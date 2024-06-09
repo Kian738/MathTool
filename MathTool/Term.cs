@@ -42,7 +42,7 @@ internal record Term
         {
             case TermType.Number:
             case TermType.Literal:
-            case TermType.Sign:
+            case TermType.Parenthesis:
                 result += Value;
                 break;
             case TermType.Operator:
@@ -53,7 +53,10 @@ internal record Term
                     _ => $"{Left?.ToString()} {Value} {Right?.ToString()}",
                 };
                 break;
-            // TODO: Implement Parenthesis
+            case TermType.Sign:
+                result += Value;
+                result += Right?.ToString();
+                break;
         }
 
         return result;
