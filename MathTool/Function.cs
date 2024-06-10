@@ -117,6 +117,8 @@ internal class Function
                                 terms.Remove(term);
                             continue;
                         case TermType.Literal: // 1|x x
+                            if (previous.Parent?.Type == TermType.Sign)
+                                SetRight(previous.Parent, term);
                             PerformMultiplication(term, previous);
                             break;
                         case TermType.Operator: // 1|x -
@@ -135,9 +137,14 @@ internal class Function
                             SetRight(previous, term);
                             break;
                         case TermType.Operator: // + +
-                            term.Type = TermType.Sign;
-                            SetRight(previous, term);
-                            break;
+                            // We simplify the expression by removing the sign and updating the previous operator if it is either + or -
+                            if (previous.Value == "+" && term.Value == "-")
+                                previous.Value = "-";
+                            else if (previous.Value == "-" && term.Value == "-")
+                                previous.Value = "+";
+
+                            terms.Remove(term);
+                            continue;
                         // TODO: Implement Parenthesis
                     }
                     break;
@@ -149,10 +156,6 @@ internal class Function
                     {
                         case TermType.Number: // - 1
                         case TermType.Literal: // - x
-                            SetRight(previous, term);
-                            break;
-                        case TermType.Operator: // - +
-                            term.Type = TermType.Sign;
                             SetRight(previous, term);
                             break;
                     };
