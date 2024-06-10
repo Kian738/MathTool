@@ -104,31 +104,23 @@ internal class Function
             switch (previous.Type)
             {
                 case TermType.Number:
+                case TermType.Literal:
                     switch (term.Type)
                     {
                         case TermType.Number: // 1 2
-                            previous.Value += c;
-                            if (stack.Count == 0)
-                                terms.Remove(term);
-                            continue;
+                            if (previous.Type == TermType.Number)
+                            {
+                                previous.Value += c;
+                                if (stack.Count == 0)
+                                    terms.Remove(term);
+                                continue;
+                            }
+                            else
+                                throw new ArgumentException($"Invalid term: {previous.Value} {term.Value} at Position: {i}"); // TODO: Beautify the error
                         case TermType.Literal: // 1 x
                             PerformMultiplication(term, previous);
                             break;
                         case TermType.Operator: // 1 -
-                            term.Left = previous;
-                            break;
-                            // TODO: Implement Parenthesis
-                    }
-                    break;
-                case TermType.Literal:
-                    switch (term.Type)
-                    {
-                        case TermType.Number: // x 1
-                            throw new ArgumentException($"Invalid term: {previous.Value} {term.Value} at Position: {i}"); // TODO: Beautify the error
-                        case TermType.Literal: // x x
-                            PerformMultiplication(previous, term);
-                            break;
-                        case TermType.Operator: // x -
                             term.Left = previous.Parent?.Type == TermType.Sign ? previous.Parent : previous;
                             break;
                             // TODO: Implement Parenthesis
