@@ -105,22 +105,21 @@ internal class Function
             {
                 case TermType.Number:
                 case TermType.Literal:
+                    var isLiteral = previous.Type == TermType.Literal;
                     switch (term.Type)
                     {
-                        case TermType.Number: // 1 2
-                            if (previous.Type == TermType.Number)
-                            {
-                                previous.Value += c;
-                                if (stack.Count == 0)
-                                    terms.Remove(term);
-                                continue;
-                            }
-                            else
-                                throw new ArgumentException($"Invalid term: {previous.Value} {term.Value} at Position: {i}"); // TODO: Beautify the error
-                        case TermType.Literal: // 1 x
+                        case TermType.Number: // 1|x 2
+                            if (isLiteral)
+                                throw new ArgumentException($"Invalid term: {previous.Value} {term.Value} at Position: {i}");
+                            
+                            previous.Value += c;
+                            if (stack.Count == 0)
+                                terms.Remove(term);
+                            continue;
+                        case TermType.Literal: // 1|x x
                             PerformMultiplication(term, previous);
                             break;
-                        case TermType.Operator: // 1 -
+                        case TermType.Operator: // 1|x -
                             term.Left = previous.Parent?.Type == TermType.Sign ? previous.Parent : previous;
                             break;
                             // TODO: Implement Parenthesis
